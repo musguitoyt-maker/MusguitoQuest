@@ -37,8 +37,7 @@
             background-color: rgba(198, 198, 198, 0.85);
             border: 5px solid var(--mc-border);
             box-shadow: inset -4px -4px 0px var(--mc-shadow), inset 4px 4px 0px #fff;
-            display: flex;
-            flex-direction: column;
+            display: flex; flex-direction: column;
             padding: env(safe-area-inset-top) 10px env(safe-area-inset-bottom) 10px;
         }
 
@@ -49,10 +48,8 @@
             background-size: cover;
             background-position: center;
             z-index: 100;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            align-items: center;
+            display: flex; flex-direction: column;
+            justify-content: flex-end; align-items: center;
             padding-bottom: 20%;
         }
 
@@ -72,15 +69,10 @@
             background-position: center;
             border: 4px solid #000;
             display: flex; justify-content: center; align-items: flex-end;
-            margin-bottom: 10px;
-            position: relative;
-            min-height: 160px;
+            margin-bottom: 10px; position: relative; min-height: 160px;
         }
 
-        #musguito-sprite {
-            height: 90%; width: auto;
-            image-rendering: pixelated;
-        }
+        #musguito-sprite { height: 90%; width: auto; image-rendering: pixelated; }
 
         #dialogue-box {
             background: #fff; border: 3px solid #000;
@@ -90,11 +82,7 @@
             overflow-y: auto;
         }
 
-        #action-list { 
-            display: flex; flex-direction: column; 
-            gap: 6px; padding-bottom: 10px; 
-            margin-top: auto;
-        }
+        #action-list { display: flex; flex-direction: column; gap: 6px; padding-bottom: 10px; margin-top: auto; }
 
         .btn {
             background: #999; border: 3px solid #000;
@@ -127,37 +115,33 @@
         <img src="Musguito.png" id="musguito-sprite" alt="Musguito">
     </div>
 
-    <div id="dialogue-box">Generando mundo procedural...</div>
+    <div id="dialogue-box">Generando mundo...</div>
     <div id="action-list"></div>
 </div>
 
 <script>
-    // --- MOTOR DE GENERACIÓN COHERENTE Y ALEATORIA ---
-    const engine = {
-        sujetos: ["Un Creeper azul", "Un Admin invisible", "Un pequeño Ghast", "Un aldeano rico", "Un lobo con armadura", "Un Enderman curioso", "Un ejército de Slimes"],
-        verbos: ["está custodiando", "acaba de robar", "intenta destruir", "está saltando sobre", "quiere quitarte", "ha bloqueado el paso a"],
-        objetos: ["tu pico de diamante", "una tarta de manzana", "el portal al Nether", "tu inventario secreto", "una cubeta con lava", "tu cama de lana"],
-        lugares: ["en medio de la aldea", "en una cueva profunda", "cerca de un barranco", "dentro de tu base", "bajo un árbol de roble"],
-
-        verbosAccion: ["Atacar con", "Huir usando", "Protegerse con", "Negociar con", "Saltar con"],
-        herramientas: ["una espada de madera", "una perla de ender", "un bloque de tierra", "una manzana dorada", "un cubo de agua", "fuegos artificiales"],
-
-        generarHistoria() {
-            const s = this.sujetos[Math.floor(Math.random()*this.sujetos.length)];
-            const v = this.verbos[Math.floor(Math.random()*this.verbos.length)];
-            const o = this.objetos[Math.floor(Math.random()*this.objetos.length)];
-            const l = this.lugares[Math.floor(Math.random()*this.lugares.length)];
-            return `${s} ${v} ${o} ${l}.`;
-        },
-
-        generarOpcion() {
-            const va = this.verbosAccion[Math.floor(Math.random()*this.verbosAccion.length)];
-            const h = this.herramientas[Math.floor(Math.random()*this.herramientas.length)];
-            return `${va} ${h}`;
-        }
+    const dic = {
+        sujetos: ["Un Creeper", "Un Zombie", "Un Enderman", "Un Esqueleto", "Un Slime", "Un Ghast", "Un Aldeano", "Un Golem", "Un Piglin", "Un Wither", "Un Blaze", "Un Phantom", "Un Shulker", "Un Guardián", "Un Evocador", "Un Vindicator", "Un Ravager", "Un Strider", "Un Axolote", "Un Hoglin"],
+        adjetivos: ["brillante", "enojado", "gigante", "invisible", "mutante", "místico", "hambriento", "volador", "veloz", "pequeño", "legendario", "corrupto", "pixelado", "explosivo", "maldito", "sagrado", "con gafas", "armado", "despistado", "pro"],
+        verbos: ["custodia", "ataca", "roba", "destruye", "invade", "bloquea", "quema", "observa", "amenaza", "protege", "esconde", "transforma", "lanza", "devora", "teletransporta", "invoca", "vende", "sabotea", "vigila", "golpea"],
+        objetos: ["el pico de diamante", "una manzana de oro", "el portal al Nether", "tu base de madera", "un bloque de TNT", "la estrella del Wither", "tu inventario", "una cama de lana", "el cristal del End", "tu armadura de netherite", "un cubo con lava", "una perla de ender", "el huevo de dragón", "una ballesta", "tu comida", "un mapa del tesoro"],
+        lugares: ["en el desierto", "en una cueva", "en el Nether", "en la aldea", "bajo el mar", "en el End", "en la jungla", "en tu sótano", "en un pantano", "en la cima del mundo", "en una fortaleza", "en un bosque oscuro", "en el chunk 0", "en una mina abandonada"],
+        
+        acciones: ["Usar", "Lanzar", "Craftear", "Atacar con", "Huir con", "Defenderse con", "Saltar con", "Construir", "Comer", "Ofrecer"],
+        herramientas: ["espada de madera", "perla de ender", "cubo de agua", "manzana dorada", "bloque de tierra", "arco encantado", "fuegos artificiales", "poción de salto", "tarta de calabaza", "escudo de hierro", "mechero", "caña de pescar", "ala de elitra"]
     };
 
     let state = { day: 1, hp: 3 };
+
+    function random(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+    function generarSituacion() {
+        return `${random(dic.sujetos)} ${random(dic.adjetivos)} ${random(dic.verbos)} ${random(dic.objetos)} ${random(dic.lugares)}.`;
+    }
+
+    function generarOpcion() {
+        return `${random(dic.acciones)} ${random(dic.herramientas)}`;
+    }
 
     function initGame() {
         document.getElementById('menu-screen').classList.add('hidden');
@@ -173,46 +157,41 @@
 
     function renderTurn() {
         if (state.hp <= 0) return handleDeath();
-        
         setMood('normal');
         document.getElementById('day-counter').innerText = state.day;
-        document.getElementById('dialogue-box').innerText = engine.generarHistoria() + " ¿Qué vas a hacer?";
+        document.getElementById('dialogue-box').innerText = generarSituacion() + " ¿Qué vas a hacer?";
         
         const list = document.getElementById('action-list');
         list.innerHTML = '';
 
-        // Generar 2 opciones únicas al azar
         let opts = new Set();
-        while(opts.size < 2) opts.add(engine.generarOpcion());
+        while(opts.size < 2) opts.add(generarOpcion());
         
         opts.forEach(text => {
             const b = document.createElement('button');
             b.className = 'btn';
             b.innerText = text;
-            b.onclick = () => resolve(text);
+            b.onclick = () => resolve();
             list.appendChild(b);
         });
     }
 
-    function resolve(decision) {
+    function resolve() {
         const r = Math.random();
         let feedback = "";
-        
-        if (r > 0.6) {
-            feedback = `¡LOGRADO! Al usar eso, lograste salvar la situación y ganar experiencia.`;
+        if (r > 0.65) {
+            feedback = "¡ÉXITO! Lograste superar el obstáculo de forma épica.";
             setMood('win');
-        } else if (r > 0.3) {
-            feedback = `EXTRAÑO... Lo que hiciste no ayudó mucho, pero al menos sigues en pie.`;
+        } else if (r > 0.35) {
+            feedback = "RESULTADO NEUTRO. No pasó nada grave, pero gastaste materiales.";
             setMood('think');
         } else {
-            feedback = `¡OOF! Eso salió fatal. Perdiste salud intentando realizar esa acción.`;
+            feedback = "¡OOF! Saliste herido en el proceso. Perdiste un corazón.";
             state.hp--;
             setMood('hurt');
         }
-
         state.day++;
         drawHearts();
-        
         document.getElementById('dialogue-box').innerText = feedback;
         const list = document.getElementById('action-list');
         list.innerHTML = '<button class="btn btn-green" onclick="renderTurn()">CONTINUAR</button>';
@@ -226,7 +205,7 @@
 
     function handleDeath() {
         setMood('lost');
-        document.getElementById('dialogue-box').innerText = "Has caído en combate. Sobreviviste " + (state.day - 1) + " días en este mundo.";
+        document.getElementById('dialogue-box').innerText = "Has muerto. Sobreviviste " + (state.day - 1) + " días.";
         const list = document.getElementById('action-list');
         list.innerHTML = '<button class="btn" style="background:#b03a2e" onclick="location.reload()">RESPAWN</button>';
     }
