@@ -14,7 +14,6 @@
             --mc-border: #000;
             --mc-green: #5da54a;
             --mc-shadow: #555;
-            --mc-gold: #ffcc00;
         }
 
         body, html {
@@ -56,7 +55,7 @@
 
         .anim-idle { animation: idle 3s infinite ease-in-out; }
         .anim-hurt { animation: hurt 0.3s ease-in-out; }
-        .anim-win { animation: idle 0.2s infinite ease-in-out; filter: brightness(1.2); }
+        .anim-win { animation: idle 0.2s infinite ease-in-out; }
 
         #menu-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -72,8 +71,8 @@
             padding: 8px 12px; margin: 5px 0;
         }
 
-        #coin-display { color: var(--mc-gold); font-size: 0.8rem; }
-        #hearts-display { color: #ff0000; font-size: 1rem; }
+        #hearts-display { color: #ff0000; font-size: 1.2rem; text-shadow: 2px 2px 0px #000; }
+        .day-label { font-size: 0.75rem; color: #fff; text-shadow: 1px 1px 0px #000; }
 
         #visual-box {
             flex: 1.5; background-image: url('Background.png');
@@ -83,31 +82,12 @@
             min-height: 160px; overflow: hidden;
         }
 
-        /* CONTENEDOR DE SPRITE Y ACCESORIO */
-        .sprite-wrapper {
-            height: 80%; /* Ajustado para que quepa la corona arriba */
-            position: relative;
-            display: flex;
-            justify-content: center;
-            align-items: flex-end;
+        #sprite-container {
+            height: 90%; position: relative; display: flex; justify-content: center; align-items: flex-end;
         }
 
         #musguito-sprite {
-            height: 100%;
-            width: auto;
-            image-rendering: pixelated;
-        }
-
-        /* FIX DE ESCALA PARA LA CORONA/ACCESORIOS */
-        #accessory-layer {
-            position: absolute;
-            top: -20%; /* Lo sube para que quede sobre la cabeza */
-            width: 100%; /* Se ajusta al ancho del personaje */
-            height: 100%;
-            object-fit: contain;
-            z-index: 10;
-            image-rendering: pixelated;
-            pointer-events: none;
+            height: 100%; width: auto; image-rendering: pixelated;
         }
 
         #dialogue-box {
@@ -127,15 +107,8 @@
             text-shadow: 1px 1px 0 #000; cursor: pointer; width: 100%;
         }
 
+        .btn:active { transform: translateY(2px); box-shadow: inset 3px 3px 0 #555; }
         .btn-green { background: var(--mc-green); box-shadow: inset -3px -3px 0 #3a6b30, inset 3px 3px 0 #a4e095; }
-        .btn-shop { background: #5a96ff; box-shadow: inset -3px -3px 0 #2a56a5, inset 3px 3px 0 #9fc2ff; }
-        
-        #shop-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); z-index: 200;
-            display: flex; flex-direction: column; padding: 20px;
-        }
-
         .hidden { display: none !important; }
     </style>
 </head>
@@ -145,64 +118,49 @@
 
 <div id="game-container">
     <div id="menu-screen">
-        <button class="btn btn-green" onclick="initGame()" style="width: 80%; margin-bottom: 10px;">JUGAR</button>
-        <button class="btn btn-shop" onclick="toggleShop(true)" style="width: 80%;">TIENDA</button>
+        <button class="btn btn-green" onclick="initGame()" style="width: 80%;">JUGAR</button>
     </div>
 
     <div id="top-bar">
-        <div id="coin-display">🪙 <span id="coins">0</span></div>
-        <div id="hearts-display">❤❤❤</div>
+        <span class="day-label">DÍA <span id="day-counter">1</span></span>
+        <span id="hearts-display">❤❤❤</span>
     </div>
 
     <div id="visual-box">
         <div class="sprite-wrapper anim-idle" id="sprite-container">
             <img src="Musguito.png" id="musguito-sprite" alt="Musguito">
-            <img src="" id="accessory-layer" class="hidden">
         </div>
     </div>
 
-    <div id="dialogue-box">Iniciando...</div>
+    <div id="dialogue-box">Generando mundo...</div>
     <div id="action-list"></div>
-</div>
-
-<div id="shop-overlay" class="hidden">
-    <h2 style="color: var(--mc-gold); text-align: center; font-size: 0.9rem;">TIENDA</h2>
-    <div id="shop-items" style="flex: 1; overflow-y: auto;"></div>
-    <button class="btn" onclick="toggleShop(false)">SALIR</button>
 </div>
 
 <script>
     const dic = {
-        sujetos: ["Un Creeper", "Un Zombie", "Un Enderman", "Un Esqueleto", "Un Slime", "Un Golem", "Un Piglin", "Un Wither", "Un Blaze", "Un Warden"],
-        adjetivos: ["enfurecido", "invisible", "mutante", "legendario", "con lag", "explosivo", "corrupto", "brillante", "hacker", "pequeño"],
-        verbos: ["custodia", "ataca", "roba", "destruye", "bloquea", "quema", "observa", "amenaza", "sabotea", "golpea"],
-        objetos: ["el pico de diamante", "una manzana de oro", "el portal al Nether", "tu base secreta", "un bloque de TNT", "tu inventario", "el huevo de dragón"],
-        lugares: ["en el desierto", "en una cueva", "en el Nether", "en la aldea", "en el End", "en la jungla", "en tu base"],
-        acciones: ["Usar", "Lanzar", "Craftear", "Atacar con", "Huir con", "Defenderse con", "Comer", "Ofrecer"],
-        herramientas: ["espada de madera", "perla de ender", "cubo de agua", "manzana dorada", "bloque de tierra", "arco", "escudo", "tridente"]
+        sujetos: ["Un Creeper", "Un Zombie", "Un Enderman", "Un Esqueleto", "Un Slime", "Un Ghast", "Un Aldeano", "Un Golem", "Un Piglin", "Un Wither", "Un Blaze", "Un Warden", "Un Shulker", "Un Ravager"],
+        adjetivos: ["enfurecido", "invisible", "gigante", "místico", "legendario", "con lag", "explosivo", "pixelado", "brillante", "pro"],
+        verbos: ["custodia", "ataca", "roba", "destruye", "bloquea el paso a", "quema", "observa fijamente", "amenaza con quitarte", "protege ferozmente", "sabotea"],
+        objetos: ["el pico de diamante", "una manzana de oro", "el portal al Nether", "tu base secreta", "un bloque de TNT", "tu inventario", "una cama roja", "el huevo de dragón"],
+        lugares: ["en el desierto", "en una cueva", "en el Nether", "en la aldea", "bajo el mar", "en el End", "en la jungla", "en tu sótano", "en una fortaleza"],
+        acciones: ["Usar", "Lanzar", "Craftear", "Atacar con", "Huir con", "Defenderse con", "Saltar sobre", "Comer"],
+        herramientas: ["espada de madera", "perla de ender", "cubo de agua", "manzana dorada", "bloque de tierra", "arco encantado", "escudo de hierro", "tridente"]
     };
 
-    const accessories = [
-        { id: 'corona', name: 'Corona Real', price: 100, img: 'Corona.png' },
-        { id: 'gafas', name: 'Gafas Thug', price: 200, img: 'Gafas.png' },
-        { id: 'capa', name: 'Capa Admin', price: 500, img: 'Capa.png' }
-    ];
-
-    let state = {
-        day: 1, hp: 3,
-        coins: parseInt(localStorage.getItem('mCoins')) || 0,
-        owned: JSON.parse(localStorage.getItem('mOwned')) || [],
-        equipped: localStorage.getItem('mEquipped') || null
-    };
-
-    function save() {
-        localStorage.setItem('mCoins', state.coins);
-        localStorage.setItem('mOwned', JSON.stringify(state.owned));
-        localStorage.setItem('mEquipped', state.equipped || '');
-        document.getElementById('coins').innerText = state.coins;
-    }
+    let state = { day: 1, hp: 3 };
 
     function random(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+    function setMood(type) {
+        const sprite = document.getElementById('musguito-sprite');
+        const moodMap = { 'normal': '', 'win': '1', 'think': '2', 'hurt': '3', 'lost': '4' };
+        sprite.src = `Musguito${moodMap[type]}.png`;
+        
+        const container = document.getElementById('sprite-container');
+        if (type === 'hurt') playAnim('anim-hurt');
+        else if (type === 'win') playAnim('anim-win');
+        else container.className = 'sprite-wrapper anim-idle';
+    }
 
     function playAnim(name) {
         const container = document.getElementById('sprite-container');
@@ -210,74 +168,52 @@
         if(name !== 'anim-idle') setTimeout(() => { container.className = 'sprite-wrapper anim-idle'; }, 500);
     }
 
-    function toggleShop(show) {
-        const shop = document.getElementById('shop-overlay');
-        if (show) { shop.classList.remove('hidden'); renderShop(); }
-        else { shop.classList.add('hidden'); applyAccessory(); }
-    }
-
-    function renderShop() {
-        const container = document.getElementById('shop-items');
-        container.innerHTML = `<p style='color:var(--mc-gold); text-align:center; font-size:0.7rem;'>Monedas: ${state.coins}</p>`;
-        accessories.forEach(acc => {
-            const isOwned = state.owned.includes(acc.id);
-            const isEquipped = state.equipped === acc.id;
-            const itemDiv = document.createElement('div');
-            itemDiv.style.cssText = "background:#333; border:2px solid #000; padding:10px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;";
-            itemDiv.innerHTML = `
-                <div style="font-size:0.6rem; color:#fff;">${acc.name}<br><span>${acc.price} 🪙</span></div>
-                <button class="btn" style="width:auto; padding:5px 8px; font-size:0.5rem;" onclick="buyOrEquip('${acc.id}', ${acc.price})">
-                    ${isEquipped ? 'EQUIPADO' : (isOwned ? 'USAR' : 'COMPRAR')}
-                </button>
-            `;
-            container.appendChild(itemDiv);
-        });
-    }
-
-    function buyOrEquip(id, price) {
-        if (state.owned.includes(id)) state.equipped = (state.equipped === id) ? null : id;
-        else if (state.coins >= price) { state.coins -= price; state.owned.push(id); state.equipped = id; }
-        save(); renderShop();
-    }
-
-    function applyAccessory() {
-        const layer = document.getElementById('accessory-layer');
-        if (state.equipped) {
-            const acc = accessories.find(a => a.id === state.equipped);
-            layer.src = acc.img;
-            layer.classList.remove('hidden');
-        } else layer.classList.add('hidden');
-    }
-
     function initGame() {
         document.getElementById('menu-screen').classList.add('hidden');
         state.day = 1; state.hp = 3;
-        drawHearts(); applyAccessory(); renderTurn();
+        drawHearts();
+        renderTurn();
     }
 
     function renderTurn() {
         if (state.hp <= 0) return handleDeath();
-        document.getElementById('dialogue-box').innerText = `${random(dic.sujetos)} ${random(dic.adjetivos)} ${random(dic.verbos)} ${random(dic.objetos)} ${random(dic.lugares)}.`;
+        setMood('normal');
+        document.getElementById('day-counter').innerText = state.day;
+        document.getElementById('dialogue-box').innerText = `${random(dic.sujetos)} ${random(dic.adjetivos)} ${random(dic.verbos)} ${random(dic.objetos)} ${random(dic.lugares)}. ¿Qué vas a hacer?`;
+        
         const list = document.getElementById('action-list');
         list.innerHTML = '';
         let opts = new Set();
         while(opts.size < 2) opts.add(`${random(dic.acciones)} ${random(dic.herramientas)}`);
+        
         opts.forEach(text => {
             const b = document.createElement('button');
-            b.className = 'btn'; b.innerText = text; b.onclick = resolve;
+            b.className = 'btn';
+            b.innerText = text;
+            b.onclick = resolve;
             list.appendChild(b);
         });
     }
 
     function resolve() {
         const r = Math.random();
-        let reward = state.day * 10;
-        if (r > 0.6) {
-            state.coins += reward; playAnim('anim-win');
-            document.getElementById('dialogue-box').innerText = "¡Éxito! Ganaste " + reward + " monedas.";
-        } else if (r > 0.3) document.getElementById('dialogue-box').innerText = "Sobreviviste por poco.";
-        else { state.hp--; playAnim('anim-hurt'); document.getElementById('dialogue-box').innerText = "¡Ouch! Recibiste daño."; }
-        state.day++; save(); drawHearts();
+        let feedback = "";
+        
+        if (r > 0.65) {
+            feedback = "¡ÉXITO! Lograste superar el obstáculo de forma épica.";
+            setMood('win');
+        } else if (r > 0.35) {
+            feedback = "RESULTADO NEUTRO. No pasó nada grave, pero te quedas pensando.";
+            setMood('think');
+        } else {
+            feedback = "¡OOF! Saliste herido en el proceso. Perdiste un corazón.";
+            state.hp--;
+            setMood('hurt');
+        }
+
+        state.day++;
+        drawHearts();
+        document.getElementById('dialogue-box').innerText = feedback;
         const list = document.getElementById('action-list');
         list.innerHTML = '<button class="btn btn-green" onclick="renderTurn()">CONTINUAR</button>';
     }
@@ -289,13 +225,14 @@
     }
 
     function handleDeath() {
-        document.getElementById('dialogue-box').innerText = "Game Over. Día: " + (state.day - 1);
+        setMood('lost');
+        document.getElementById('dialogue-box').innerText = "Has muerto. Sobreviviste " + (state.day - 1) + " días.";
         const list = document.getElementById('action-list');
         list.innerHTML = '<button class="btn" style="background:#b03a2e" onclick="location.reload()">RESPAWN</button>';
     }
 
-    document.getElementById('coins').innerText = state.coins;
-    applyAccessory();
+    drawHearts();
 </script>
+
 </body>
 </html>
