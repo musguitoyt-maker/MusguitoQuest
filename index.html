@@ -14,6 +14,7 @@
             --mc-border: #000;
             --mc-green: #5da54a;
             --mc-shadow: #555;
+            --mc-gold: #ffcc00;
         }
 
         body, html {
@@ -59,8 +60,9 @@
             padding: 8px 12px; margin: 5px 0;
         }
 
-        #hearts-display { color: #ff0000; font-size: 1.2rem; text-shadow: 2px 2px 0px #000; }
-        .day-label { font-size: 0.75rem; color: #fff; text-shadow: 1px 1px 0px #000; }
+        #hearts-display { color: #ff0000; font-size: 1rem; text-shadow: 2px 2px 0px #000; }
+        #coin-display { color: var(--mc-gold); font-size: 0.8rem; text-shadow: 1px 1px 0px #000; }
+        .day-label { font-size: 0.65rem; color: #fff; text-shadow: 1px 1px 0px #000; }
 
         #visual-box {
             flex: 1.5;
@@ -72,7 +74,13 @@
             margin-bottom: 10px; position: relative; min-height: 160px;
         }
 
-        #musguito-sprite { height: 90%; width: auto; image-rendering: pixelated; }
+        #musguito-sprite { height: 90%; width: auto; image-rendering: pixelated; position: relative; z-index: 5; }
+        
+        /* Capa para accesorios comprados */
+        #accessory-layer {
+            position: absolute; height: 90%; width: auto;
+            bottom: 0; z-index: 10; pointer-events: none;
+        }
 
         #dialogue-box {
             background: #fff; border: 3px solid #000;
@@ -94,7 +102,16 @@
 
         .btn:active { transform: translateY(2px); box-shadow: inset 3px 3px 0 #555; }
         .btn-green { background: var(--mc-green); box-shadow: inset -3px -3px 0 #3a6b30, inset 3px 3px 0 #a4e095; }
+        .btn-shop { background: #5a96ff; box-shadow: inset -3px -3px 0 #2a56a5, inset 3px 3px 0 #9fc2ff; }
+        
         .hidden { display: none !important; }
+
+        /* Estilo Tienda */
+        #shop-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 200;
+            display: flex; flex-direction: column; padding: 20px;
+        }
     </style>
 </head>
 <body>
@@ -103,48 +120,123 @@
 
 <div id="game-container">
     <div id="menu-screen">
-        <button class="btn btn-green" onclick="initGame()" style="width: 80%;">JUGAR</button>
+        <button class="btn btn-green" onclick="initGame()" style="width: 80%; margin-bottom: 10px;">JUGAR</button>
+        <button class="btn btn-shop" onclick="toggleShop(true)" style="width: 80%;">TIENDA</button>
     </div>
 
     <div id="top-bar">
-        <span class="day-label">DÍA <span id="day-counter">1</span></span>
-        <span id="hearts-display">❤❤❤</span>
+        <div class="day-label">DÍA <span id="day-counter">1</span></div>
+        <div id="coin-display">🪙 <span id="coins">0</span></div>
+        <div id="hearts-display">❤❤❤</div>
     </div>
 
     <div id="visual-box">
         <img src="Musguito.png" id="musguito-sprite" alt="Musguito">
+        <img src="" id="accessory-layer" class="hidden">
     </div>
 
     <div id="dialogue-box">Generando mundo...</div>
     <div id="action-list"></div>
 </div>
 
+<div id="shop-overlay" class="hidden">
+    <h2 style="color: var(--mc-gold); text-align: center; font-size: 1rem;">TIENDA DE ACCESORIOS</h2>
+    <div id="shop-items" style="flex: 1; overflow-y: auto; margin: 15px 0;"></div>
+    <button class="btn" onclick="toggleShop(false)">VOLVER</button>
+</div>
+
 <script>
     const dic = {
-        sujetos: ["Un Creeper", "Un Zombie", "Un Enderman", "Un Esqueleto", "Un Slime", "Un Ghast", "Un Aldeano", "Un Golem", "Un Piglin", "Un Wither", "Un Blaze", "Un Phantom", "Un Shulker", "Un Guardián", "Un Evocador", "Un Vindicator", "Un Ravager", "Un Strider", "Un Axolote", "Un Hoglin"],
-        adjetivos: ["brillante", "enojado", "gigante", "invisible", "mutante", "místico", "hambriento", "volador", "veloz", "pequeño", "legendario", "corrupto", "pixelado", "explosivo", "maldito", "sagrado", "con gafas", "armado", "despistado", "pro"],
-        verbos: ["custodia", "ataca", "roba", "destruye", "invade", "bloquea", "quema", "observa", "amenaza", "protege", "esconde", "transforma", "lanza", "devora", "teletransporta", "invoca", "vende", "sabotea", "vigila", "golpea"],
-        objetos: ["el pico de diamante", "una manzana de oro", "el portal al Nether", "tu base de madera", "un bloque de TNT", "la estrella del Wither", "tu inventario", "una cama de lana", "el cristal del End", "tu armadura de netherite", "un cubo con lava", "una perla de ender", "el huevo de dragón", "una ballesta", "tu comida", "un mapa del tesoro"],
-        lugares: ["en el desierto", "en una cueva", "en el Nether", "en la aldea", "bajo el mar", "en el End", "en la jungla", "en tu sótano", "en un pantano", "en la cima del mundo", "en una fortaleza", "en un bosque oscuro", "en el chunk 0", "en una mina abandonada"],
-        
-        acciones: ["Usar", "Lanzar", "Craftear", "Atacar con", "Huir con", "Defenderse con", "Saltar con", "Construir", "Comer", "Ofrecer"],
-        herramientas: ["espada de madera", "perla de ender", "cubo de agua", "manzana dorada", "bloque de tierra", "arco encantado", "fuegos artificiales", "poción de salto", "tarta de calabaza", "escudo de hierro", "mechero", "caña de pescar", "ala de elitra"]
+        sujetos: ["Un Creeper", "Un Zombie", "Un Enderman", "Un Esqueleto", "Un Slime", "Un Ghast", "Un Aldeano", "Un Golem", "Un Piglin", "Un Wither"],
+        adjetivos: ["brillante", "enojado", "gigante", "invisible", "mutante", "hambriento", "volador", "veloz", "legendario", "pro"],
+        verbos: ["custodia", "ataca", "roba", "destruye", "invade", "bloquea", "quema", "observa", "amenaza", "protege"],
+        objetos: ["el pico de diamante", "una manzana de oro", "el portal al Nether", "tu base de madera", "un bloque de TNT", "tu inventario", "una cama de lana"],
+        lugares: ["en el desierto", "en una cueva", "en el Nether", "en la aldea", "bajo el mar", "en el End", "en la jungla"],
+        acciones: ["Usar", "Lanzar", "Craftear", "Atacar con", "Huir con", "Defenderse con"],
+        herramientas: ["espada de madera", "perla de ender", "cubo de agua", "manzana dorada", "bloque de tierra", "arco encantado"]
     };
 
-    let state = { day: 1, hp: 3 };
+    const accessories = [
+        { id: 'corona', name: 'Corona de Rey', price: 50, img: 'Corona.png' },
+        { id: 'gafas', name: 'Gafas Pro', price: 100, img: 'Gafas.png' },
+        { id: 'capa', name: 'Capa Épica', price: 250, img: 'Capa.png' },
+        { id: 'espada', name: 'Espada Espalda', price: 500, img: 'EspadaAcc.png' }
+    ];
+
+    let state = {
+        day: 1,
+        hp: 3,
+        coins: parseInt(localStorage.getItem('mCoins')) || 0,
+        owned: JSON.parse(localStorage.getItem('mOwned')) || [],
+        equipped: localStorage.getItem('mEquipped') || null
+    };
+
+    function save() {
+        localStorage.setItem('mCoins', state.coins);
+        localStorage.setItem('mOwned', JSON.stringify(state.owned));
+        localStorage.setItem('mEquipped', state.equipped || '');
+        document.getElementById('coins').innerText = state.coins;
+    }
 
     function random(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
-    function generarSituacion() {
-        return `${random(dic.sujetos)} ${random(dic.adjetivos)} ${random(dic.verbos)} ${random(dic.objetos)} ${random(dic.lugares)}.`;
+    function toggleShop(show) {
+        const shop = document.getElementById('shop-overlay');
+        if (show) {
+            shop.classList.remove('hidden');
+            renderShop();
+        } else {
+            shop.classList.add('hidden');
+            applyAccessory();
+        }
     }
 
-    function generarOpcion() {
-        return `${random(dic.acciones)} ${random(dic.herramientas)}`;
+    function renderShop() {
+        const container = document.getElementById('shop-items');
+        container.innerHTML = `<p style='color:#fff; font-size:0.7rem; text-align:center;'>Monedas: ${state.coins}</p>`;
+        accessories.forEach(acc => {
+            const isOwned = state.owned.includes(acc.id);
+            const isEquipped = state.equipped === acc.id;
+            const itemDiv = document.createElement('div');
+            itemDiv.style.cssText = "background:#444; border:2px solid #000; padding:10px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;";
+            itemDiv.innerHTML = `
+                <div style="font-size:0.6rem; color:#fff;">${acc.name}<br><span style="color:var(--mc-gold)">${acc.price} 🪙</span></div>
+                <button class="btn" style="width:auto; padding:5px 10px; font-size:0.5rem;" onclick="buyOrEquip('${acc.id}', ${acc.price})">
+                    ${isEquipped ? 'EQUIPADO' : (isOwned ? 'PONER' : 'COMPRAR')}
+                </button>
+            `;
+            container.appendChild(itemDiv);
+        });
+    }
+
+    function buyOrEquip(id, price) {
+        if (state.owned.includes(id)) {
+            state.equipped = (state.equipped === id) ? null : id;
+        } else if (state.coins >= price) {
+            state.coins -= price;
+            state.owned.push(id);
+            state.equipped = id;
+        }
+        save();
+        renderShop();
+    }
+
+    function applyAccessory() {
+        const layer = document.getElementById('accessory-layer');
+        if (state.equipped) {
+            const acc = accessories.find(a => a.id === state.equipped);
+            layer.src = acc.img;
+            layer.classList.remove('hidden');
+        } else {
+            layer.classList.add('hidden');
+        }
     }
 
     function initGame() {
         document.getElementById('menu-screen').classList.add('hidden');
+        state.day = 1; state.hp = 3;
+        drawHearts();
+        applyAccessory();
         renderTurn();
     }
 
@@ -152,21 +244,18 @@
         const sprite = document.getElementById('musguito-sprite');
         const moodMap = { 'normal': '', 'win': '1', 'think': '2', 'hurt': '3', 'lost': '4' };
         sprite.src = `Musguito${moodMap[type]}.png`;
-        sprite.onerror = () => { sprite.alt = `[Musguito ${type}]`; };
     }
 
     function renderTurn() {
         if (state.hp <= 0) return handleDeath();
         setMood('normal');
         document.getElementById('day-counter').innerText = state.day;
-        document.getElementById('dialogue-box').innerText = generarSituacion() + " ¿Qué vas a hacer?";
+        document.getElementById('dialogue-box').innerText = `${random(dic.sujetos)} ${random(dic.adjetivos)} ${random(dic.verbos)} ${random(dic.objetos)} ${random(dic.lugares)}. ¿Qué haces?`;
         
         const list = document.getElementById('action-list');
         list.innerHTML = '';
-
         let opts = new Set();
-        while(opts.size < 2) opts.add(generarOpcion());
-        
+        while(opts.size < 2) opts.add(`${random(dic.acciones)} ${random(dic.herramientas)}`);
         opts.forEach(text => {
             const b = document.createElement('button');
             b.className = 'btn';
@@ -179,18 +268,22 @@
     function resolve() {
         const r = Math.random();
         let feedback = "";
+        let reward = state.day * 5; // Más días = más monedas
+
         if (r > 0.65) {
-            feedback = "¡ÉXITO! Lograste superar el obstáculo de forma épica.";
+            feedback = `¡ÉXITO! Ganaste ${reward} monedas por tu valentía.`;
+            state.coins += reward;
             setMood('win');
         } else if (r > 0.35) {
-            feedback = "RESULTADO NEUTRO. No pasó nada grave, pero gastaste materiales.";
+            feedback = "RESULTADO NEUTRO. No ganas nada, pero sigues vivo.";
             setMood('think');
         } else {
-            feedback = "¡OOF! Saliste herido en el proceso. Perdiste un corazón.";
+            feedback = "¡OOF! Perdiste un corazón intentándolo.";
             state.hp--;
             setMood('hurt');
         }
         state.day++;
+        save();
         drawHearts();
         document.getElementById('dialogue-box').innerText = feedback;
         const list = document.getElementById('action-list');
@@ -205,12 +298,14 @@
 
     function handleDeath() {
         setMood('lost');
-        document.getElementById('dialogue-box').innerText = "Has muerto. Sobreviviste " + (state.day - 1) + " días.";
+        document.getElementById('dialogue-box').innerText = `HAS MUERTO. Sobreviviste ${state.day - 1} días.`;
         const list = document.getElementById('action-list');
         list.innerHTML = '<button class="btn" style="background:#b03a2e" onclick="location.reload()">RESPAWN</button>';
     }
 
-    drawHearts();
+    // Carga inicial
+    document.getElementById('coins').innerText = state.coins;
+    applyAccessory();
 </script>
 
 </body>
